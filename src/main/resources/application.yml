@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: userity
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+    url: jdbc:mysql://localhost:3306/userity
+  jpa:
+    hibernate.ddl-auto: none
+    show-sql: false
+    open-in-view: false
