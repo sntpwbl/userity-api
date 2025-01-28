@@ -8,6 +8,7 @@ class UserityApplicationTests {
 
 	@Test
 	void contextLoads() {
+		
 	}
 
 }
