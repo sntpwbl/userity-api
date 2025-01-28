@@ -5,14 +5,21 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.study.userity.dto.TokenDTO;
+import com.study.userity.exception.InvalidJWTAuthenticationException;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class JwtTokenProvider {
@@ -26,6 +33,11 @@ public class JwtTokenProvider {
     private Date refreshTokenExpireLengthInMilliseconds =  new Date(new Date().getTime() + (expireLengthInMilliseconds * 3));
 
     Algorithm algorithm = null;
+    private final UserDetailsService userDetailsService;
+
+    public JwtTokenProvider(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
     @PostConstruct
     public void init(){
@@ -52,7 +64,7 @@ public class JwtTokenProvider {
                 .sign(algorithm)
                 .strip();
         }
-        
+
         private String getRefreshToken(String username, List<String> roles, Date now) {
             return JWT.create()
                 .withClaim("roles", roles)
@@ -61,5 +73,23 @@ public class JwtTokenProvider {
                 .withSubject(username)
                 .sign(algorithm)
                 .strip();
+        }
+
+        public Authentication getAuthentication(String token){
+            DecodedJWT decodedToken = decodeToken(token);
+            UserDetails details = userDetailsService.loadUserByUsername(decodedToken.getSubject());
+            return new UsernamePasswordAuthenticationToken(details, "", details.getAuthorities());
+        }
+            
+        public DecodedJWT decodeToken(String token) {
+            return JWT.require(algorithm).build().verify(token);
+        }
+
+        public String resolveTokenToString(HttpServletRequest request){
+            String authorizationHeader = request.getHeader("Authorization");
+            if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
+                return authorizationHeader.substring("Bearer ".length());
+            }
+            return null;
         }
 }

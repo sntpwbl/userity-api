@@ -24,7 +24,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ExceptionResponse er = new ExceptionResponse(new Date(), ex.getMessage(), request.getDescription(false), "404");
         return new ResponseEntity<>(er, HttpStatus.NOT_FOUND);
     }
-    @ExceptionHandler(InvalidJWTAuthentication.class)
+    @ExceptionHandler(InvalidJWTAuthenticationException.class)
     public ResponseEntity<ExceptionResponse> handleInvalidJWTAuthentication(Exception ex, WebRequest request){
         ExceptionResponse er = new ExceptionResponse(new Date(), ex.getMessage(), request.getDescription(false), "403");
         return new ResponseEntity<>(er, HttpStatus.FORBIDDEN);
