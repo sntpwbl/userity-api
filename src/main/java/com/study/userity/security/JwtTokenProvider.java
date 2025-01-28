@@ -92,4 +92,18 @@ public class JwtTokenProvider {
             }
             return null;
         }
+
+        public boolean validateToken(String token) throws InvalidJWTAuthenticationException{
+            DecodedJWT decodedToken = decodeToken(token);
+            try {
+                if(decodedToken.getExpiresAt().before(new Date())){
+                    throw new InvalidJWTAuthenticationException("Expired token.");
+                }
+                return true;
+            } catch (InvalidJWTAuthenticationException e) {
+                return false;
+            } catch (Exception e){
+                throw new InvalidJWTAuthenticationException("Invalid token.");
+            }
+        }
 }
