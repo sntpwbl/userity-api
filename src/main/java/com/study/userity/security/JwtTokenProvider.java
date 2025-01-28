@@ -53,57 +53,55 @@ public class JwtTokenProvider {
         return new TokenDTO(username, true, now, validity, accessToken, refreshToken);
         }
         
-        private String getAccessToken(String username, List<String> roles, Date now, Date validity) {
-            String issuerUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
-            return JWT.create()
-                .withClaim("roles", roles)
-                .withIssuedAt(now)
-                .withExpiresAt(validity)
-                .withSubject(username)
-                .withIssuer(issuerUrl)
-                .sign(algorithm)
-                .strip();
-        }
+    private String getAccessToken(String username, List<String> roles, Date now, Date validity) {
+        String issuerUrl = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
+        return JWT.create()
+            .withClaim("roles", roles)
+            .withIssuedAt(now)
+            .withExpiresAt(validity)
+            .withSubject(username)
+            .withIssuer(issuerUrl)
+            .sign(algorithm)
+            .strip();
+    }
 
-        private String getRefreshToken(String username, List<String> roles, Date now) {
-            return JWT.create()
-                .withClaim("roles", roles)
-                .withIssuedAt(now)
-                .withExpiresAt(refreshTokenExpireLengthInMilliseconds)
-                .withSubject(username)
-                .sign(algorithm)
-                .strip();
-        }
+    private String getRefreshToken(String username, List<String> roles, Date now) {
+        return JWT.create()
+            .withClaim("roles", roles)
+            .withIssuedAt(now)
+            .withExpiresAt(refreshTokenExpireLengthInMilliseconds)
+            .withSubject(username)
+            .sign(algorithm)
+            .strip();
+    }
 
-        public Authentication getAuthentication(String token){
-            DecodedJWT decodedToken = decodeToken(token);
-            UserDetails details = userDetailsService.loadUserByUsername(decodedToken.getSubject());
-            return new UsernamePasswordAuthenticationToken(details, "", details.getAuthorities());
-        }
-            
-        public DecodedJWT decodeToken(String token) {
-            return JWT.require(algorithm).build().verify(token);
-        }
+    public Authentication getAuthentication(String token){
+        DecodedJWT decodedToken = decodeToken(token);
+        UserDetails details = userDetailsService.loadUserByUsername(decodedToken.getSubject());
+        return new UsernamePasswordAuthenticationToken(details, "", details.getAuthorities());
+    }
+        
+    public DecodedJWT decodeToken(String token) {
+        return JWT.require(algorithm).build().verify(token);
+    }
 
-        public String resolveTokenToString(HttpServletRequest request){
-            String authorizationHeader = request.getHeader("Authorization");
-            if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
-                return authorizationHeader.substring("Bearer ".length());
+    public String resolveTokenToString(HttpServletRequest request){
+        String authorizationHeader = request.getHeader("Authorization");
+        if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
+            return authorizationHeader.substring("Bearer ".length());
+        }
+        return null;
+    }
+
+    public boolean validateToken(String token) throws InvalidJWTAuthenticationException{
+        DecodedJWT decodedToken = decodeToken(token);
+        try {
+            if(decodedToken.getExpiresAt().before(new Date())){
+                throw new InvalidJWTAuthenticationException("Expired token.");
             }
-            return null;
+            return true;
+        } catch (InvalidJWTAuthenticationException e) {
+            return false;
         }
-
-        public boolean validateToken(String token) throws InvalidJWTAuthenticationException{
-            DecodedJWT decodedToken = decodeToken(token);
-            try {
-                if(decodedToken.getExpiresAt().before(new Date())){
-                    throw new InvalidJWTAuthenticationException("Expired token.");
-                }
-                return true;
-            } catch (InvalidJWTAuthenticationException e) {
-                return false;
-            } catch (Exception e){
-                throw new InvalidJWTAuthenticationException("Invalid token.");
-            }
-        }
+    }
 }
