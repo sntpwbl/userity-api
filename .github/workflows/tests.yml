@@ -6,6 +6,21 @@ on:
 jobs:
   test:
       runs-on: ubuntu-latest
+      services:
+        mysql:
+          image: mysql:8.0 
+          ports:
+            - 3306:3306
+          options: >-
+            --health-cmd="mysqladmin ping -h localhost"
+            --health-interval=10s
+            --health-timeout=5s
+            --health-retries=3
+          env:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: testdb
+            MYSQL_USER: testuser
+            MYSQL_PASSWORD: testpassword
       steps:
         - name: checkout
           uses: actions/checkout@v4
@@ -22,5 +37,20 @@ jobs:
             restore-keys: ${{ runner.os }}-maven-
         - name: install dependencies
           run: mvn install -DskipTests
+        - name: wait database
+          run: |
+            for i in {1..30}; do
+              if mysqladmin ping -h 127.0.0.1 --silent; then
+                echo "ready"
+                break
+              fi
+              echo "waiting"
+              sleep 2
+            done
+  
         - name: run tests
+          env:
+            SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/testdb
+            SPRING_DATASOURCE_USERNAME: testuser
+            SPRING_DATASOURCE_PASSWORD: testpassword
           run: mvn test
