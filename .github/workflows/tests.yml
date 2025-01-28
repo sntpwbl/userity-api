@@ -1,17 +1,13 @@
-name: Test Runner Workflow
-on:
-  push:
-    branches: 
-        - main
+name: test runner workflow
+on: workflow_dispatch
 jobs:
     setup:
         runs-on: ubuntu-latest
         steps:
-          - name: Checkout repo
+          - name: checkout
             uses: actions/checkout@v4
-          - name: Setup java
+          - name: setup-java
             uses: actions/setup-java@v4
             with:
                 distribution: jetbrains
                 java-version: '21'
-                # teste
